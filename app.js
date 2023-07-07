@@ -1,10 +1,10 @@
 //jshint esversion:6
-
+require('dotenv').config(); //should be at top
 const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose =  require('mongoose');
-
+const encrypt = require('mongoose-encryption');
 const app = express();
 
 app.use(express.static("public"));
@@ -13,12 +13,14 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-mongoose.connect("mongodb://127.0.0.1:27017/userDB");
+mongoose.connect(process.env.MONGO_URI);
 
-const userSchema = {
+const userSchema =  new mongoose.Schema({
   email : String,
   password : String
-}
+});
+
+userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ["password"]});
 
 const User = new mongoose.model("User", userSchema);
 
@@ -39,11 +41,7 @@ app.route('/login')
       if(foundUser.password === password){
         console.log("Successfully logined");
         res.render("secrets");
-      } else{
-        console.log("Password entered is wrong");
       }
-    } else{
-      console.log("User not found");
     }
   })
   .catch(function(err){
